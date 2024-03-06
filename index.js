@@ -1,7 +1,6 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const apiKey = 'sk_prod_TfMbARhdgues5AuIosvvdAC9WsA5kXiZlW8HZPaRDlIbCpSpLsXBeZO7dCVZQwHAY3P4VSBPiiC33poZ1tdUj2ljOzdTCCOSpUZ_3912';
-const formId = 'cLZojxk94ous';
 
 const app = express();
 
@@ -92,28 +91,6 @@ app.get('/:formId/filteredResponses', async (req, res) => {
     res.json(payload(req, allResponses));
 });
 
-const fakeReq = {
-  query: {
-    filters: JSON.stringify([
-      {
-        id: "jB2qDRcXQ8Pjo1kg3jre2J",
-        condition: "does_not_equal",
-        value: "Engineering",
-      }
-    ])
-  },
-  formId,
-};
-
-(async () => {
-  const responses = await fetchResponses(fakeReq); 
-
-
-  console.log(
-    JSON.stringify(
-      payload(fakeReq, responses).responses.map(res => res.questions),
-      null,
-      2,
-    ));
-})();
-
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
