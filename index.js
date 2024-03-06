@@ -34,29 +34,25 @@ const apiRequest = (req, offset) => {
   });
 }
 
-const fetchResponses = async (req) => {
-    try {
-        const response = await apiRequest(req);
+const fetchResponses = async (req, res) => {
+  const response = await apiRequest(req);
 
-        const data = await response.json();
+  const data = await response.json();
 
-        const { totalResponses, responses } = data;
+  const { totalResponses, responses } = data;
 
-        const allResponses = [responses];
-        let offset = 150;
+  const allResponses = [responses];
+  let offset = 150;
 
-        while (offset < totalResponses) {
-          const response = await apiRequest(req, offset);
-          const data = await response.json();
-          allResponses.push(data.responses);
+  while (offset < totalResponses) {
+    const response = await apiRequest(req, offset);
+    const data = await response.json();
+    allResponses.push(data.responses);
 
-          offset += 150;
-        }
-        
-        return allResponses.flat();
-    } catch (error) {
-        console.error('Error fetching responses:', error);
-    }
+    offset += 150;
+  }
+  
+  return allResponses.flat();
 };
 
 const filterFunctions = {
@@ -73,40 +69,68 @@ const valid = (filter) => {
 }
 
 const payload = (req, data) => {
-    const { filters = "[]", limit = 150, offset = 0 } = req.query;
-    const parsedFilters = JSON.parse(filters);
-    const parsedLimit = parseInt(limit);
-    const parsedOffset = parseInt(offset);
+  const { filters = "[]", limit = 150, offset = 0 } = req.query;
+  const parsedFilters = JSON.parse(filters);
+  const parsedLimit = parseInt(limit);
+  const parsedOffset = parseInt(offset);
 
-    const filteredResponses = (Array.isArray(filters) && filters.length)
-      ? data.filter(response => {
-        if (!Array.isArray(response.questions)) return true;
+  const filteredResponses = (Array.isArray(parsedFilters) && parsedFilters.length)
+    ? data.filter(response => {
+      if (!Array.isArray(response.questions)) return true;
 
-        return parsedFilters.every(filter => {
-          if (!valid(filter)) return true;
+      return parsedFilters.every(filter => {
+        if (!valid(filter)) return true;
 
-          const { id, condition, value } = filter;
-          const field = response.questions.find((question) => question?.id === id);
-          const fieldValue = field?.value;
+        const { id, condition, value } = filter;
+        const field = response.questions.find((question) => question?.id === id);
 
-          if (fieldValue === undefined || fieldValue === null) return true;
+        if (!field) return false;
 
-          return filterFunctions[condition](fieldValue, value);
-        });
-      })
-      : data;
+        const fieldValue = field.value;
 
-    return {
-      responses: filteredResponses.slice(parsedOffset, parsedOffset + limit),
-      totalResponses: filteredResponses.length,
-      pageCount: Math.ceil(filteredResponses.length / parsedLimit)
-    }
+        if (fieldValue === undefined || fieldValue === null) return false;
+
+        return filterFunctions[condition](fieldValue, value);
+      });
+    })
+    : data;
+
+  return {
+    responses: filteredResponses.slice(parsedOffset, parsedOffset + limit),
+    totalResponses: filteredResponses.length,
+    pageCount: Math.ceil(filteredResponses.length / parsedLimit)
+  }
 }
 
 app.get('/:formId/filteredResponses', async (req, res) => {
-    const allResponses = await fetchResponses(req);
-    
+  if (req.query.filters) {
+    const filters = JSON.parse(req.query.filters);
+
+    if (!Array.isArray(filters)) {
+      res.status(400).json({ message: "Malformed Request: filters must be an array" });
+      return;
+    }
+
+    if (filters.find(filter => !valid(filter))) {
+      res.status(400).json({ message: "Malformed Request: invalid filter" });
+      return;
+    }
+  }
+
+  if (!req.method === "GET") {
+    req.status(405).json({ message: "Method Not Allowed"});
+    return;
+  }
+
+  try {
+    const allResponses = await fetchResponses(req, res);
+
     res.json(payload(req, allResponses));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+
+    console.error('Error fetching responses:', error);
+  }
 });
 
 app.listen(port, () => {
