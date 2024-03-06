@@ -39,6 +39,9 @@ const fetchResponses = async (req) => {
         const response = await apiRequest(req);
 
         const data = await response.json();
+
+        console.log("data", JSON.stringify(data, null, 2));
+        
         const { totalResponses, responses } = data;
 
         const allResponses = [responses];
