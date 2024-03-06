@@ -8,26 +8,23 @@ const queryParameters = ({ filters = "[]", limit = 150, offset = 0 } /* req.quer
   };
 }
 
+const match = (question, filter) => {
+  if (!question || question.value === undefined || question.value === null) return false;
+  return filterFunctions[filter.condition](question.value, filter.value);
+};
+
+const questionsMatch = (submission, filters) => {
+  if (!Array.isArray(submission.questions)) return false;
+  return filters.every(filter => {
+    const question = submission.questions.find(q => q?.id === filter.id);
+    return match(question, filter);
+  });
+};
+
 const filteredSubmissions = (submissions, filters) => {
-  return filters.length
-    ? submissions.filter(submission => {
-        if (!Array.isArray(submission.questions)) return false;
-
-        return filters.every(filter => {
-          const { id, condition, value } = filter;
-
-          const field = submission.questions
-            .find((question) => question?.id === id);
-
-          if (!field) return false;
-          
-          if (field.value === undefined || field.value === null) return false;
-
-          return filterFunctions[condition](field.value, value);
-        });
-      })
-    : submissions;
-}
+  if (!filters.length) return submissions;
+  return submissions.filter(submission => questionsMatch(submission, filters));
+};
 
 const payload = (req, submissions) => {
   const { filters, limit, offset } = queryParameters(req.query);

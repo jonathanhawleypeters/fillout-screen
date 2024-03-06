@@ -8,21 +8,21 @@ const port = process.env.PORT || 10000;
 const app = express();
 
 app.get('/:formId/filteredResponses', async (req, res) => {
-  if (req.query.filters) {
-    const filters = JSON.parse(req.query.filters);
-
-    if (!Array.isArray(filters)) {
-      res.status(400).json({ message: "Malformed Request: filters must be an array" });
-      return;
-    }
-
-    if (filters.find(filter => !valid(filter))) {
-      res.status(400).json({ message: "Malformed Request: invalid filter" });
-      return;
-    }
-  }
-
   try {
+    if (req.query.filters) {
+      const filters = JSON.parse(req.query.filters);
+
+      if (!Array.isArray(filters)) {
+        res.status(400).json({ message: "Malformed Request: filters must be an array" });
+        return;
+      }
+
+      if (filters.find(filter => !valid(filter))) {
+        res.status(400).json({ message: "Malformed Request: invalid filter" });
+        return;
+      }
+    }
+
     const submissions = await fetchSubmissions(req, res);
 
     res.json(payload(req, submissions));
