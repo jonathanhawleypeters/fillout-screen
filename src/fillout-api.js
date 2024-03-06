@@ -28,7 +28,7 @@ const apiRequest = (req, offset) => {
   });
 }
 
-const fetchSubmissions = async (req, res) => {
+const fetchSubmissions = async (req) => {
   const response = await apiRequest(req);
 
   const data = await response.json();

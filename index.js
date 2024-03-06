@@ -23,7 +23,7 @@ app.get('/:formId/filteredResponses', async (req, res) => {
       }
     }
 
-    const submissions = await fetchSubmissions(req, res);
+    const submissions = await fetchSubmissions(req);
 
     res.json(payload(req, submissions));
   } catch (error) {
