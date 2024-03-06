@@ -1,5 +1,8 @@
 const express = require('express');
 const fetch = require('node-fetch');
+
+const port = process.env.PORT || 10000;
+
 const apiKey = 'sk_prod_TfMbARhdgues5AuIosvvdAC9WsA5kXiZlW8HZPaRDlIbCpSpLsXBeZO7dCVZQwHAY3P4VSBPiiC33poZ1tdUj2ljOzdTCCOSpUZ_3912';
 
 const app = express();
@@ -91,6 +94,6 @@ app.get('/:formId/filteredResponses', async (req, res) => {
     res.json(payload(req, allResponses));
 });
 
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
