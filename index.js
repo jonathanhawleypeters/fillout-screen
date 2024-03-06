@@ -66,21 +66,35 @@ const filterFunctions = {
   less_than: (a, b) => a < b, 
 };
 
+const valid = (filter) => {
+  return typeof filter.id === 'string' &&
+    Boolean(filterFunctions[filter.condition]) &&
+    (typeof filter.value === 'string' || typeof filter.value === 'number')
+}
+
 const payload = (req, data) => {
     const { filters = "[]", limit = 150, offset = 0 } = req.query;
     const parsedFilters = JSON.parse(filters);
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
-    const filteredResponses = filters.length ? data.filter(response => {
-      return parsedFilters.every(filter => {
-        const { id, condition, value } = filter;
-        const { value: fieldValue } = response.questions.find(({ id: fieldId }) => fieldId === id);
-        if (fieldValue === undefined) return true;
+    const filteredResponses = (Array.isArray(filters) && filters.length)
+      ? data.filter(response => {
+        if (!Array.isArray(response.questions)) return true;
 
-        return filterFunctions[condition](fieldValue, value);
-      });
-    }) : data;
+        return parsedFilters.every(filter => {
+          if (!valid(filter)) return true;
+
+          const { id, condition, value } = filter;
+          const field = response.questions.find((question) => question?.id === id);
+          const fieldValue = field?.value;
+
+          if (fieldValue === undefined || fieldValue === null) return true;
+
+          return filterFunctions[condition](fieldValue, value);
+        });
+      })
+      : data;
 
     return {
       responses: filteredResponses.slice(parsedOffset, parsedOffset + limit),
