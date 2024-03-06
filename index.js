@@ -71,6 +71,8 @@ const payload = (req, data) => {
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
 
+    console.log(JSON.stringify(data, null, 2), parsedFilters, parsedLimit, parsedOffset, "query", req.query);
+
     const filteredResponses = filters.length ? data.filter(response => {
       return parsedFilters.every(filter => {
         const { id, condition, value } = filter;
@@ -80,6 +82,8 @@ const payload = (req, data) => {
         return filterFunctions[condition](fieldValue, value);
       });
     }) : data;
+
+    console.log("filtered responses", JSON.stringify(filteredResponses, null, 2))
 
     return {
       responses: filteredResponses.slice(parsedOffset, parsedOffset + limit),
